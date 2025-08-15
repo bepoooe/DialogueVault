@@ -44,6 +44,7 @@ class UniversalChatbotExtension {
     this.setupObserver();
     this.scanForPrompts();
     this.setupKeyboardShortcuts();
+    this.setupMessageListener();
 
     window.addEventListener('resize', () => this.handleResize());
     this.handleResize();
@@ -112,6 +113,22 @@ class UniversalChatbotExtension {
         e.preventDefault();
         console.log('[DialogueVault] Keyboard refresh triggered');
         this.scanForPrompts();
+      }
+    });
+  }
+
+  private setupMessageListener(): void {
+    // Listen for messages from the sidebar iframe
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'DIALOGUEVAULT_CLOSE_SIDEBAR') {
+        this.hideSidebar();
+      } else if (event.data.type === 'DIALOGUEVAULT_SCROLL_TO_TURN') {
+        const index = event.data.index;
+        if (index >= 0 && index < this.prompts.length) {
+          this.scrollToPrompt(this.prompts[index]);
+          this.setSelectedPrompt(this.prompts[index].id, 
+            this.promptList?.children[index + 1] as HTMLElement); // +1 for platform indicator
+        }
       }
     });
   }
@@ -337,7 +354,7 @@ class UniversalChatbotExtension {
       display: flex;
       flex-direction: column;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, visibility 0.3s ease;
       box-shadow: -2px 0 12px rgba(93, 78, 55, 0.15);
     `;
 
@@ -642,6 +659,8 @@ class UniversalChatbotExtension {
       this.sidebar.classList.remove('collapsed');
       this.sidebar.style.display = 'flex';
       this.sidebar.style.right = '0';
+      this.sidebar.style.visibility = 'visible'; // Reset visibility
+      this.sidebar.style.opacity = '1'; // Reset opacity
     }
     this.hideExpandBtn();
     if (this.isMobile && this.sidebar) {
@@ -660,7 +679,9 @@ class UniversalChatbotExtension {
         this.sidebar.style.display = 'none';
         document.body.style.overflow = '';
       } else {
-        this.sidebar.style.right = '-300px';
+        this.sidebar.style.right = '-320px'; // Match the sidebar width
+        this.sidebar.style.visibility = 'hidden'; // Ensure it's hidden
+        this.sidebar.style.opacity = '0'; // Make it transparent
       }
     }
     
