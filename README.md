@@ -1,4 +1,4 @@
-# DialogueVault - Professional Conversation Navigator
+# DialogueVault - Conversation Navigator
 
 A sophisticated React + TypeScript Chrome extension that provides professional conversation navigation for **ChatGPT, Claude, and Gemini** with intelligent platform detection and adaptive UI.
 
