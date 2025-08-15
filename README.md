@@ -23,7 +23,7 @@ A React + TypeScript Chrome extension for navigating conversations in **ChatGPT,
 
 1. **Clone and setup**:
    ```bash
-   cd Chatbot-Indexer
+   cd DialogueVault
    npm install
    npm run build
    ```
