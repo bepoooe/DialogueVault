@@ -92,11 +92,17 @@ class UniversalChatbotExtension {
   }
 
   private setupKeyboardShortcuts(): void {
-    // Keyboard shortcut: Ctrl+Shift+I
+    // Keyboard shortcut: Ctrl+Shift+I - Toggle sidebar
+    // Keyboard shortcut: Ctrl+Shift+R - Refresh conversation
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'I') {
         e.preventDefault();
         this.toggleSidebar();
+      }
+      if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+        e.preventDefault();
+        console.log('[DialogueVault] Keyboard refresh triggered');
+        this.scanForPrompts();
       }
     });
   }
@@ -121,9 +127,14 @@ class UniversalChatbotExtension {
       return;
     }
 
-    // Add platform indicator
+    // Add platform indicator with timestamp
     const platformIndicator = document.createElement('div');
-    platformIndicator.textContent = `${this.platformName} Conversation`;
+    const now = new Date();
+    const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    platformIndicator.innerHTML = `
+      <div>${this.platformName} Conversation</div>
+      <div style="font-size: 10px; margin-top: 2px; opacity: 0.8;">Updated: ${timeString}</div>
+    `;
     platformIndicator.style.cssText = `
       padding: 12px 20px;
       color: #8b7355;
@@ -345,6 +356,58 @@ class UniversalChatbotExtension {
       letter-spacing: 0.025em;
     `;
 
+    // Create button container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = `
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    `;
+
+    // Refresh button
+    const refreshBtn = document.createElement('button');
+    refreshBtn.className = 'refresh-btn';
+    refreshBtn.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M22.99 14A9 9 0 0 1 8.36 18.36L23 14"></path>
+      </svg>
+    `;
+    refreshBtn.title = 'Refresh conversation';
+    refreshBtn.style.cssText = `
+      background: none;
+      border: none;
+      color: #8b7355;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+    `;
+    refreshBtn.addEventListener('click', () => {
+      console.log('[DialogueVault] Manual refresh triggered');
+      this.scanForPrompts();
+      
+      // Add visual feedback
+      refreshBtn.style.transform = 'rotate(180deg)';
+      setTimeout(() => {
+        refreshBtn.style.transform = 'rotate(0deg)';
+      }, 300);
+    });
+    refreshBtn.addEventListener('mouseover', () => {
+      refreshBtn.style.backgroundColor = '#ddceb9';
+      refreshBtn.style.color = '#5d4e37';
+    });
+    refreshBtn.addEventListener('mouseout', () => {
+      refreshBtn.style.backgroundColor = 'transparent';
+      refreshBtn.style.color = '#8b7355';
+    });
+
     const closeBtn = document.createElement('button');
     closeBtn.className = 'close-btn';
     closeBtn.innerHTML = `
@@ -377,8 +440,11 @@ class UniversalChatbotExtension {
       closeBtn.style.color = '#8b7355';
     });
 
+    buttonContainer.appendChild(refreshBtn);
+    buttonContainer.appendChild(closeBtn);
+
     header.appendChild(title);
-    header.appendChild(closeBtn);
+    header.appendChild(buttonContainer);
 
     // Prompt list
     this.promptList = document.createElement('div');
@@ -402,8 +468,26 @@ class UniversalChatbotExtension {
     `;
     this.promptList.appendChild(emptyState);
 
+    // Footer with keyboard shortcuts
+    const footer = document.createElement('div');
+    footer.className = 'sidebar-footer';
+    footer.style.cssText = `
+      padding: 12px 20px;
+      border-top: 1px solid #d4c4a8;
+      background: #e4d5c2;
+      font-size: 11px;
+      color: #8b7355;
+      text-align: center;
+      line-height: 1.4;
+    `;
+    footer.innerHTML = `
+      <div>Ctrl+Shift+I to toggle</div>
+      <div style="margin-top: 2px; opacity: 0.8;">Ctrl+Shift+R to refresh</div>
+    `;
+
     this.sidebar.appendChild(header);
     this.sidebar.appendChild(this.promptList);
+    this.sidebar.appendChild(footer);
     document.body.appendChild(this.sidebar);
   }
 

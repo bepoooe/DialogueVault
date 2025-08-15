@@ -90,7 +90,10 @@ export const Sidebar: React.FC<SidebarProps> = () => {
 
       <div className="dialoguevault-footer">
         <div className="dialoguevault-shortcut">
-          Ctrl+Shift+I to toggle
+          <div>Ctrl+Shift+I to toggle</div>
+          <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>
+            Ctrl+Shift+R to refresh
+          </div>
         </div>
       </div>
     </div>

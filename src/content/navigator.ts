@@ -128,10 +128,54 @@ export class UniversalChatbotNavigator {
       
       if (elements.length > 0) {
         // Filter for elements that actually contain text content
-        const validElements = Array.from(elements).filter(el => {
+        let validElements = Array.from(elements).filter(el => {
           const text = el.textContent?.trim() || '';
-          return text.length > 20; // Must have substantial content
+          const hasEnoughText = text.length > 20; // Must have substantial content
+          
+          // For ChatGPT, be VERY specific about what constitutes a valid message
+          if (this.platform === 'chatgpt') {
+            // Must have a role attribute
+            const hasRole = el.hasAttribute('data-message-author-role');
+            if (!hasRole) return false;
+            
+            // Skip if it's just placeholder/system text
+            const isPlaceholderText = text.match(/^(What's on your mind today\?|ChatGPT|User|Assistant|Temporary Chat|This chat won't appear|Ask anything|window\._oai_|oai_)$/i);
+            if (isPlaceholderText) return false;
+            
+            // Must have actual markdown content or be substantial user input
+            const hasMarkdown = el.querySelector('div[class*="markdown"]') || el.querySelector('.prose');
+            const isSubstantialContent = text.length > 50 && !text.includes('Temporary Chat');
+            
+            // Skip system messages and UI elements
+            const isSystemMessage = text.includes("This chat won't appear in history") || 
+                                  text.includes("safety purposes") ||
+                                  text.includes("window._oai_") ||
+                                  text.length < 30;
+            
+            return hasRole && (hasMarkdown || isSubstantialContent) && !isSystemMessage;
+          }
+          
+          return hasEnoughText;
         });
+
+        // Additional filtering for ChatGPT to avoid nested elements and ensure unique messages
+        if (this.platform === 'chatgpt' && validElements.length > 0) {
+          validElements = validElements.filter((el, index) => {
+            // Check if this element is contained within another element in our list
+            const isNested = validElements.some((otherEl, otherIndex) => {
+              return index !== otherIndex && otherEl.contains(el);
+            });
+            
+            // Also filter out elements that don't have meaningful conversational content
+            const text = el.textContent?.trim() || '';
+            const hasConversationalContent = text.length > 30 && 
+              !text.includes('What\'s on your mind') &&
+              !text.includes('window._oai_') &&
+              !text.match(/^(ChatGPT|User|Assistant)$/);
+            
+            return !isNested && hasConversationalContent;
+          });
+        }
         
         if (validElements.length > 0) {
           foundElements = validElements;
@@ -177,14 +221,47 @@ export class UniversalChatbotNavigator {
       return turns;
     }
 
-    // Process found elements
+    // Process found elements and deduplicate aggressively
+    const seenPreviews = new Set<string>();
+    const processedElements = new Set<HTMLElement>();
+    const seenTexts = new Set<string>(); // Additional deduplication by exact text
+    
     foundElements.forEach((element, index) => {
       const htmlElement = element as HTMLElement;
+      
+      // Skip if we've already processed this exact element
+      if (processedElements.has(htmlElement)) {
+        return;
+      }
+      
       const role = this.determineRole(htmlElement);
       
       if (role) {
         const preview = this.extractPreview(htmlElement);
         if (preview && preview.length > 3) {
+          
+          // Skip common placeholder texts for ChatGPT
+          if (this.platform === 'chatgpt') {
+            const isPlaceholder = preview.match(/^(What's on your mind|ChatGPT|User|Assistant|Temporary|This chat won't|window\._oai|Ask anything)/i);
+            if (isPlaceholder) {
+              return;
+            }
+          }
+          
+          // Create a normalized version for deduplication
+          const normalizedPreview = preview.toLowerCase().trim().substring(0, 50);
+          const fullText = preview.toLowerCase().trim();
+          
+          // Skip if we've seen this preview or similar text before
+          if (seenPreviews.has(normalizedPreview) || seenTexts.has(fullText)) {
+            console.log(`[DialogueVault] Skipping duplicate: "${preview.substring(0, 30)}..."`);
+            return;
+          }
+          
+          seenPreviews.add(normalizedPreview);
+          seenTexts.add(fullText);
+          processedElements.add(htmlElement);
+          
           console.log(`[DialogueVault] Turn ${turns.length + 1}: ${role} - "${preview.substring(0, 60)}..."`);
           turns.push({
             index: turns.length,

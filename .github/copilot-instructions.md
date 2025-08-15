@@ -1,37 +1,29 @@
-# Universal Chatbot Navigator - Multi-Platform Chrome Extension
+# ChatGPT, Claude & Gemini Navigator - Chrome Extension
 
 ## Project Overview
-React + TypeScript Chrome extension that provides intelligent navigation for long conversations across **multiple AI chatbot platforms** with a universal sidebar index.
+React + TypeScript Chrome extension that provides intelligent navigation for long conversations across **ChatGPT, Claude, and Gemini** with a universal sidebar index.
 
 ## Supported Platforms
 - **OpenAI ChatGPT** (chat.openai.com, chatgpt.com)
 - **Anthropic Claude** (claude.ai)
 - **Google Gemini/Bard** (gemini.google.com, bard.google.com)
-- **DeepSeek** (chat.deepseek.com)
-- **Poe** (poe.com)
-- **You.com** (you.com)
-- **Character.AI** (character.ai)
-- **Mistral** (chat.mistral.ai)
-- **Hugging Face** (huggingface.co/chat)
-- **LMSYS Chatbot Arena** (chat.lmsys.org)
-- **Universal fallback** for new/unknown platforms
 
 ## Key Components
 
 ### Platform Detection (`src/content/platform-detector.ts`)
-- Automatic platform detection based on hostname
-- Platform-specific selectors and configurations
-- Intelligent fallback for unknown platforms
-- Extensible architecture for adding new platforms
+- Automatic platform detection for ChatGPT, Claude, and Gemini
+- Enhanced Gemini selectors with improved DOM parsing
+- Platform-specific configurations optimized for each supported platform
+- Fallback system for unknown platforms
 
 ### Universal Navigator (`src/content/navigator.ts`)
-- Cross-platform message parsing
-- Role detection (user vs assistant) across different platforms
-- Adaptive text extraction strategies
+- Cross-platform message parsing for the three supported platforms
+- Role detection (user vs assistant) with platform-specific optimizations
+- Enhanced Gemini support with improved text extraction
 - Real-time conversation monitoring
 
 ### Main Extension (`src/content/index.ts`)
-- Platform-aware UI adaptation
+- Platform-aware UI adaptation for ChatGPT, Claude, and Gemini
 - Responsive sidebar interface
 - Platform-specific assistant naming
 - Universal keyboard shortcuts and accessibility
@@ -39,8 +31,8 @@ React + TypeScript Chrome extension that provides intelligent navigation for lon
 ## Architecture
 - **Manifest V3** Chrome extension
 - **TypeScript** for type safety
-- **Modular design** for easy platform additions
-- **Intelligent selectors** with graceful fallbacks
+- **Focused design** for ChatGPT, Claude, and Gemini optimization
+- **Enhanced Gemini support** with improved selectors and fallback detection
 - **Real-time updates** via mutation observers
 
 ## Setup Checklist

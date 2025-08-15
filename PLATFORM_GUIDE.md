@@ -2,14 +2,14 @@
 
 ## How the Universal Chatbot Navigator Works
 
-This extension uses intelligent platform detection and adaptive selectors to work across multiple AI chatbot platforms. Here's how it identifies and works with each platform:
+This extension uses intelligent platform detection and adaptive selectors to work across ChatGPT, Claude, and Gemini with a universal sidebar index.
 
 ## Platform Detection
 
 The extension automatically detects which chatbot platform you're using based on:
 - **URL hostname matching** (e.g., chat.openai.com for ChatGPT)
-- **DOM structure analysis** for unknown platforms
-- **Fallback patterns** for new or updated platforms
+- **Platform-specific optimizations** for each supported platform
+- **Enhanced Gemini support** with improved selector detection
 
 ## Platform-Specific Configurations
 
@@ -27,76 +27,32 @@ The extension automatically detects which chatbot platform you're using based on
 
 ### Gemini (Google)
 - **URLs**: `gemini.google.com`, `bard.google.com`
-- **Message Detection**: `[data-test-id*="conversation"]`, `.model-response-container`
-- **Role Detection**: Test ID attributes for user/model responses
-- **Special Features**: Model response containers
-
-### DeepSeek
-- **URLs**: `chat.deepseek.com`
-- **Message Detection**: `.message-item`, `[data-role]`
-- **Role Detection**: Direct role attributes
-- **Special Features**: Simple message structure
-
-### Poe
-- **URLs**: `poe.com`
-- **Message Detection**: `[class*="Message_messageRow"]`
-- **Role Detection**: Human vs bot message bubble classes
-- **Special Features**: CSS module-based styling
-
-### You.com
-- **URLs**: `you.com`
-- **Message Detection**: `[data-testid*="message"]`
-- **Role Detection**: User vs AI message test IDs
-- **Special Features**: Markdown content support
-
-### Character.AI
-- **URLs**: `character.ai`, `beta.character.ai`
-- **Message Detection**: `[data-testid="message"]`
-- **Role Detection**: Author attributes (user vs character)
-- **Special Features**: Character-based conversations
-
-### Mistral
-- **URLs**: `chat.mistral.ai`
-- **Message Detection**: `.message`, `.chat-message`
-- **Role Detection**: Role-based classes and attributes
-- **Special Features**: Standard chat interface
-
-### Hugging Face
-- **URLs**: `huggingface.co/chat`
-- **Message Detection**: `[data-testid="message"]`
-- **Role Detection**: From-user vs from-assistant attributes
-- **Special Features**: Prose content formatting
-
-### LMSYS Chatbot Arena
-- **URLs**: `chat.lmsys.org`
-- **Message Detection**: `.message`, `[role="log"]`
-- **Role Detection**: User vs bot class indicators
-- **Special Features**: Arena-style interface
+- **Message Detection**: `message-content`, `.conversation-turn`, `[jsname]`
+- **Role Detection**: User vs model response wrapper detection
+- **Text Extraction**: Enhanced selectors for `.text-container`, `[data-message-text="true"]`
+- **Special Features**: Improved support for Gemini's dynamic UI structure
 
 ## Fallback Detection
 
-For unknown or new platforms, the extension uses:
+For unknown platforms or if there are issues, the extension uses:
 
 1. **Generic selectors**: Common patterns like `.message`, `[class*="chat"]`
 2. **Content analysis**: Text length and structure heuristics
 3. **Role inference**: Pattern matching and alternating message detection
 4. **Adaptive parsing**: Multiple text extraction strategies
 
-## Adding New Platforms
-
-To add support for a new platform:
-
-1. **Identify selectors**: Use browser dev tools to find message containers
-2. **Analyze structure**: Determine how to distinguish user vs assistant messages
-3. **Update configuration**: Add new platform config in `platform-detector.ts`
-4. **Test thoroughly**: Verify message detection and navigation work correctly
-
 ## Troubleshooting
 
 ### Messages Not Detected
 - Check browser console for debug logs
-- Verify the platform is supported or uses common patterns
+- Verify you're on a supported platform (ChatGPT, Claude, or Gemini)
 - Try refreshing the page after the extension loads
+- Check that the conversation has loaded completely
+
+### Gemini-Specific Troubleshooting
+- The extension now includes enhanced selectors for Gemini's dynamic interface
+- If messages aren't detected, try scrolling through the conversation to trigger updates
+- The extension will use fallback detection for new Gemini UI changes
 
 ### Wrong Role Assignment
 - Platform may have changed their DOM structure

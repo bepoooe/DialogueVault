@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DialogueVault",
   "version": "2.0.0",
-  "description": "Professional conversation navigation for ChatGPT, Claude, Gemini, DeepSeek, and other AI chatbots with an intelligent sidebar index.",
+  "description": "Professional conversation navigation for ChatGPT, Claude, and Gemini with an intelligent sidebar index.",
   "permissions": [
     "activeTab"
   ],
@@ -13,15 +13,7 @@
         "https://chatgpt.com/*",
         "https://claude.ai/*",
         "https://gemini.google.com/*",
-        "https://bard.google.com/*",
-        "https://chat.deepseek.com/*",
-        "https://poe.com/*",
-        "https://you.com/*",
-        "https://character.ai/*",
-        "https://beta.character.ai/*",
-        "https://chat.mistral.ai/*",
-        "https://huggingface.co/*",
-        "https://chat.lmsys.org/*"
+        "https://bard.google.com/*"
       ],
       "js": ["content.js"],
       "run_at": "document_end"
@@ -38,15 +30,7 @@
         "https://chatgpt.com/*",
         "https://claude.ai/*",
         "https://gemini.google.com/*",
-        "https://bard.google.com/*",
-        "https://chat.deepseek.com/*",
-        "https://poe.com/*",
-        "https://you.com/*",
-        "https://character.ai/*",
-        "https://beta.character.ai/*",
-        "https://chat.mistral.ai/*",
-        "https://huggingface.co/*",
-        "https://chat.lmsys.org/*"
+        "https://bard.google.com/*"
       ]
     }
   ]

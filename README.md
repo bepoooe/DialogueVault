@@ -1,20 +1,12 @@
 # DialogueVault - Professional Conversation Navigator
 
-A sophisticated React + TypeScript Chrome extension that provides professional conversation navigation for **multiple AI chatbot platforms** including ChatGPT, Claude, Gemini, DeepSeek, and many others.
+A sophisticated React + TypeScript Chrome extension that provides professional conversation navigation for **ChatGPT, Claude, and Gemini** with intelligent platform detection and adaptive UI.
 
 ## 🌐 Supported Platforms
 
 - **OpenAI ChatGPT** (chat.openai.com, chatgpt.com)
 - **Anthropic Claude** (claude.ai)
 - **Google Gemini/Bard** (gemini.google.com, bard.google.com)
-- **DeepSeek** (chat.deepseek.com)
-- **Poe** (poe.com)
-- **You.com** (you.com)
-- **Character.AI** (character.ai)
-- **Mistral** (chat.mistral.ai)
-- **Hugging Face** (huggingface.co/chat)
-- **LMSYS Chatbot Arena** (chat.lmsys.org)
-- **And more** (with intelligent fallback detection)
 
 ## Features
 
