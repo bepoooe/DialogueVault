@@ -49,11 +49,20 @@ class UniversalChatbotExtension {
     this.handleResize();
 
     const reposition = () => {
+      // For Gemini, use less frequent positioning updates to prevent jumping
+      if (this.platformName === 'Gemini') {
+        // Only reposition on significant events for Gemini
+        return;
+      }
       this.positionExpandBtnDesktop();
       this.positionExpandBtnMobile();
     };
     window.addEventListener('scroll', reposition, { passive: true });
-    setInterval(reposition, 800);
+    
+    // Reduce frequency for stable positioning
+    if (this.platformName !== 'Gemini') {
+      setInterval(reposition, 2000); // Increased from 800ms to 2000ms
+    }
   }
 
   private setupObserver(): void {
@@ -560,21 +569,34 @@ class UniversalChatbotExtension {
   private positionExpandBtnDesktop(): void {
     if (this.isMobile || !this.expandBtn) return;
     
-    const shareRect = this.getShareButtonRect();
-    if (shareRect) {
-      const offsetY = 10;
+    // Platform-specific positioning
+    if (this.platformName === 'Gemini') {
+      // For Gemini, use a simple fixed position that won't interfere with the UI
       this.expandBtn.style.position = 'fixed';
-      this.expandBtn.style.top = Math.max(10, Math.round(shareRect.bottom + offsetY)) + 'px';
-      this.expandBtn.style.right = Math.max(20, Math.round(window.innerWidth - shareRect.right + 8)) + 'px';
+      this.expandBtn.style.top = '20px';
+      this.expandBtn.style.right = '20px';
       this.expandBtn.style.left = '';
       this.expandBtn.style.bottom = '';
     } else {
-      this.expandBtn.style.position = 'fixed';
-      this.expandBtn.style.top = '86px';
-      this.expandBtn.style.right = '28px';
-      this.expandBtn.style.left = '';
-      this.expandBtn.style.bottom = '';
+      // For other platforms, try to find share button or use fallback
+      const shareRect = this.getShareButtonRect();
+      if (shareRect && shareRect.top > 0 && shareRect.right > 0) {
+        const offsetY = 10;
+        this.expandBtn.style.position = 'fixed';
+        this.expandBtn.style.top = Math.max(10, Math.round(shareRect.bottom + offsetY)) + 'px';
+        this.expandBtn.style.right = Math.max(20, Math.round(window.innerWidth - shareRect.right + 8)) + 'px';
+        this.expandBtn.style.left = '';
+        this.expandBtn.style.bottom = '';
+      } else {
+        // Fallback position
+        this.expandBtn.style.position = 'fixed';
+        this.expandBtn.style.top = '86px';
+        this.expandBtn.style.right = '28px';
+        this.expandBtn.style.left = '';
+        this.expandBtn.style.bottom = '';
+      }
     }
+    
     this.expandBtn.style.display = this.isVisible ? 'none' : 'flex';
   }
 

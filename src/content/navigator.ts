@@ -119,6 +119,13 @@ export class UniversalChatbotNavigator {
     console.log(`[DialogueVault] Starting conversation detection for ${this.platformConfig.name}...`);
     console.log('[DialogueVault] Current URL:', window.location.href);
     
+    // Add platform-specific debugging
+    if (this.platform === 'gemini') {
+      console.log('[DialogueVault] Gemini-specific debugging...');
+      const geminiMessages = document.querySelectorAll('message-content, [jsname], .conversation-turn');
+      console.log(`[DialogueVault] Found ${geminiMessages.length} potential Gemini message elements`);
+    }
+    
     let foundElements: Element[] = [];
     
     // Try platform-specific selectors first
@@ -138,18 +145,30 @@ export class UniversalChatbotNavigator {
             const hasRole = el.hasAttribute('data-message-author-role');
             if (!hasRole) return false;
             
-            // Skip if it's just placeholder/system text
-            const isPlaceholderText = text.match(/^(What's on your mind today\?|ChatGPT|User|Assistant|Temporary Chat|This chat won't appear|Ask anything|window\._oai_|oai_)$/i);
-            if (isPlaceholderText) return false;
+            // Skip if it's just placeholder/system/debug text
+            const isPlaceholderText = text.match(/^(What's on your mind today\?|ChatGPT|User|Assistant|Temporary Chat|This chat won't appear|Ask anything)$/i);
+            const isDebugText = text.includes('window.__oai_') || 
+                              text.includes('window._oai_') ||
+                              text.includes('__oai_logHTML') ||
+                              text.includes('__oai_SSR') ||
+                              text.match(/window\.__.*?\(/);
+            
+            if (isPlaceholderText || isDebugText) {
+              console.log(`[DialogueVault] Filtering out: "${text.substring(0, 50)}..."`);
+              return false;
+            }
             
             // Must have actual markdown content or be substantial user input
             const hasMarkdown = el.querySelector('div[class*="markdown"]') || el.querySelector('.prose');
-            const isSubstantialContent = text.length > 50 && !text.includes('Temporary Chat');
+            const isSubstantialContent = text.length > 50 && 
+                                       !text.includes('Temporary Chat') &&
+                                       !text.includes('window.') &&
+                                       !text.match(/^(ChatGPT|User|Assistant)[\s\n]*$/i);
             
             // Skip system messages and UI elements
             const isSystemMessage = text.includes("This chat won't appear in history") || 
                                   text.includes("safety purposes") ||
-                                  text.includes("window._oai_") ||
+                                  text.includes("window.") ||
                                   text.length < 30;
             
             return hasRole && (hasMarkdown || isSubstantialContent) && !isSystemMessage;
@@ -242,8 +261,15 @@ export class UniversalChatbotNavigator {
           
           // Skip common placeholder texts for ChatGPT
           if (this.platform === 'chatgpt') {
-            const isPlaceholder = preview.match(/^(What's on your mind|ChatGPT|User|Assistant|Temporary|This chat won't|window\._oai|Ask anything)/i);
-            if (isPlaceholder) {
+            const isPlaceholder = preview.match(/^(What's on your mind|ChatGPT|User|Assistant|Temporary|This chat won't|window\.|__oai_|Ask anything)/i);
+            const isDebugContent = preview.includes('window.__') || 
+                                 preview.includes('window._') ||
+                                 preview.includes('logHTML') ||
+                                 preview.includes('SSR') ||
+                                 preview.match(/window\..*\(/);
+            
+            if (isPlaceholder || isDebugContent) {
+              console.log(`[DialogueVault] Filtering out placeholder/debug content: "${preview.substring(0, 30)}..."`);
               return;
             }
           }
