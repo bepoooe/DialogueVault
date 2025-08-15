@@ -2,6 +2,15 @@
 
 A React + TypeScript Chrome extension for navigating conversations in **ChatGPT, Claude, and Gemini**.
 
+---
+
+## Extension Preview
+
+![DialogueVault Preview](public/Screenshot%202025-08-15%20184916.png)
+
+---
+
+
 ## Supported Platforms
 
 - **OpenAI ChatGPT** (chat.openai.com, chatgpt.com)
