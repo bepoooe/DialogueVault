@@ -365,10 +365,10 @@ class UniversalChatbotExtension {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 20px;
+      padding: 20px 20px;
       border-bottom: 1px solid #d4c4a8;
       background: #e4d5c2;
-      min-height: 60px;
+      min-height: 80px;
     `;
 
     const title = document.createElement('h3');
@@ -377,10 +377,35 @@ class UniversalChatbotExtension {
     title.style.cssText = `
       margin: 0;
       color: #5d4e37;
-      font-size: 16px;
-      font-weight: 600;
-      letter-spacing: 0.025em;
+      font-size: 18px;
+      font-weight: 700;
+      font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      letter-spacing: -0.02em;
     `;
+
+    // Create title container with logo
+    const titleContainer = document.createElement('div');
+    titleContainer.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    `;
+
+    // Create logo image
+    const logo = document.createElement('img');
+    logo.src = chrome.runtime.getURL('logo2.png');
+    logo.alt = 'DialogueVault Logo';
+    logo.style.cssText = `
+      width: 51px;
+      height: 51px;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 3px 6px rgba(93, 78, 55, 0.2);
+    `;
+
+    // Add logo and title to container
+    titleContainer.appendChild(logo);
+    titleContainer.appendChild(title);
 
     // Create button container
     const buttonContainer = document.createElement('div');
@@ -469,7 +494,7 @@ class UniversalChatbotExtension {
     buttonContainer.appendChild(refreshBtn);
     buttonContainer.appendChild(closeBtn);
 
-    header.appendChild(title);
+    header.appendChild(titleContainer);
     header.appendChild(buttonContainer);
 
     // Prompt list

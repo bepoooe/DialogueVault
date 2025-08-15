@@ -3,6 +3,11 @@
   "name": "DialogueVault",
   "version": "2.0.0",
   "description": "Professional conversation navigation for ChatGPT, Claude, and Gemini with an intelligent sidebar index.",
+  "icons": {
+    "16": "logo.png",
+    "48": "logo.png",
+    "128": "logo.png"
+  },
   "permissions": [
     "activeTab"
   ],
@@ -20,11 +25,16 @@
     }
   ],
   "action": {
-    "default_title": "DialogueVault"
+    "default_title": "DialogueVault",
+    "default_icon": {
+      "16": "logo.png",
+      "48": "logo.png",
+      "128": "logo.png"
+    }
   },
   "web_accessible_resources": [
     {
-      "resources": ["sidebar.html"],
+      "resources": ["sidebar.html", "logo2.png"],
       "matches": [
         "https://chat.openai.com/*",
         "https://chatgpt.com/*",
