@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "WayGPT React",
+  "version": "1.0.0",
+  "description": "Navigate long ChatGPT conversations with ease using an intelligent sidebar index of all your prompts and responses.",
+  "permissions": [
+    "activeTab"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://chat.openai.com/*", "https://chatgpt.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_title": "WayGPT React"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["sidebar.html"],
+      "matches": ["https://chat.openai.com/*", "https://chatgpt.com/*"]
+    }
+  ]
+}
