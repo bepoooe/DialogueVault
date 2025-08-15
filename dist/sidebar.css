@@ -1,118 +1,160 @@
-/* WayGPT Sidebar Styles */
-.waygpt-sidebar {
+/* DialogueVault Sidebar Styles */
+:root {
+  --dv-light-beige: #e6d7c4;
+  --dv-warm-cream: #e8dbc9;
+  --dv-soft-sand: #d4c4a8;
+  --dv-white: #ffffff;
+  --dv-pale-cream: #eee3d5;
+  --dv-light-ivory: #e9dcca;
+  --dv-muted-beige: #e5d6c3;
+  --dv-warm-beige: #e4d5c2;
+  --dv-khaki-beige: #d2c2a6;
+  --dv-pastel-sand: #ddceb9;
+  --dv-text-dark: #5d4e37;
+  --dv-text-medium: #8b7355;
+  --dv-text-light: #a68b5b;
+  --dv-border: #d4c4a8;
+  --dv-border-light: #e5d6c3;
+  --dv-shadow: rgba(93, 78, 55, 0.1);
+}
+
+.dialoguevault-sidebar {
   height: 100vh;
   width: 100%;
-  background: transparent;
-  color: #ffffff;
+  background: var(--dv-light-beige);
+  color: var(--dv-text-dark);
   display: flex;
   flex-direction: column;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 14px;
+  border-left: 1px solid var(--dv-border);
 }
 
-.waygpt-content {
+.dialoguevault-content {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 20px;
 }
 
-.waygpt-empty {
+.dialoguevault-empty {
   text-align: center;
-  padding: 40px 20px;
-  color: #888;
+  padding: 60px 20px;
+  color: var(--dv-text-medium);
 }
 
-.waygpt-empty p {
-  margin: 0 0 8px 0;
+.dialoguevault-empty p {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 500;
 }
 
-.waygpt-empty-subtitle {
-  font-size: 12px;
-  line-height: 1.4;
+.dialoguevault-empty-subtitle {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--dv-text-light);
+  max-width: 200px;
+  margin: 0 auto;
 }
 
-.waygpt-turns {
+.dialoguevault-turns {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
-.waygpt-turn {
-  border: 1px solid #333;
-  border-radius: 8px;
-  padding: 12px;
+.dialoguevault-turn {
+  border: 1px solid var(--dv-border-light);
+  border-radius: 12px;
+  padding: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: #2a2a2a;
+  background: var(--dv-white);
+  box-shadow: 0 1px 3px var(--dv-shadow);
 }
 
-.waygpt-turn:hover {
-  background: #3a3a3a;
-  border-color: #555;
+.dialoguevault-turn:hover {
+  background: var(--dv-pale-cream);
+  border-color: var(--dv-soft-sand);
+  box-shadow: 0 2px 6px var(--dv-shadow);
+  transform: translateY(-1px);
 }
 
-.waygpt-turn:focus {
-  outline: 2px solid #10a37f;
+.dialoguevault-turn:focus {
+  outline: 2px solid var(--dv-khaki-beige);
   outline-offset: 2px;
 }
 
-.waygpt-turn.selected {
-  border-color: #10a37f;
-  background: #1a2a1a;
-  box-shadow: 0 0 0 1px #10a37f;
+.dialoguevault-turn.selected {
+  border-color: var(--dv-khaki-beige);
+  background: var(--dv-warm-cream);
+  box-shadow: 0 2px 8px var(--dv-shadow);
 }
 
-.waygpt-turn.user {
-  border-left: 3px solid #4a90e2;
+.dialoguevault-turn.user {
+  border-left: 4px solid var(--dv-soft-sand);
 }
 
-.waygpt-turn.assistant {
-  border-left: 3px solid #10a37f;
+.dialoguevault-turn.assistant {
+  border-left: 4px solid var(--dv-khaki-beige);
 }
 
-.waygpt-turn-header {
+.dialoguevault-turn-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
-.waygpt-turn-number {
+.dialoguevault-turn-number {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dv-text-light);
+  background: var(--dv-pastel-sand);
+  padding: 4px 8px;
+  border-radius: 6px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.dialoguevault-turn-type {
   font-size: 12px;
   font-weight: 600;
-  color: #888;
-  min-width: 20px;
+  color: var(--dv-text-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.waygpt-turn-type {
-  font-size: 14px;
-}
-
-.waygpt-turn-preview {
+.dialoguevault-turn-preview {
   font-size: 13px;
   line-height: 1.4;
-  color: #ddd;
+  color: var(--dv-text-dark);
   word-wrap: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  line-clamp: 3;
+  overflow: hidden;
 }
 
-.waygpt-footer {
-  padding: 12px 16px;
-  border-top: 1px solid #333;
-  background: rgba(42, 42, 42, 0.8);
+.dialoguevault-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--dv-border-light);
+  background: var(--dv-muted-beige);
   backdrop-filter: blur(10px);
 }
 
-.waygpt-shortcut {
+.dialoguevault-shortcut {
   font-size: 11px;
-  color: #888;
+  color: var(--dv-text-light);
   text-align: center;
+  font-weight: 500;
 }
 
 /* Mobile styles */
 @media (max-width: 767px) {
-  .waygpt-sidebar {
+  .dialoguevault-sidebar {
     position: fixed;
     top: 0;
     left: 0;
@@ -121,34 +163,69 @@
     z-index: 10000;
   }
   
-  .waygpt-header {
-    padding: 20px 16px;
+  .dialoguevault-content {
+    padding: 24px 16px;
   }
   
-  .waygpt-content {
-    padding: 20px 16px;
+  .dialoguevault-turn {
+    padding: 18px;
   }
   
-  .waygpt-turn {
-    padding: 16px;
+  .dialoguevault-footer {
+    padding: 20px 16px;
   }
 }
 
 /* Scrollbar styling */
-.waygpt-content::-webkit-scrollbar {
-  width: 6px;
+.dialoguevault-content::-webkit-scrollbar {
+  width: 8px;
 }
 
-.waygpt-content::-webkit-scrollbar-track {
-  background: #1a1a1a;
+.dialoguevault-content::-webkit-scrollbar-track {
+  background: var(--dv-light-beige);
 }
 
-.waygpt-content::-webkit-scrollbar-thumb {
-  background: #555;
-  border-radius: 3px;
+.dialoguevault-content::-webkit-scrollbar-thumb {
+  background: var(--dv-soft-sand);
+  border-radius: 4px;
 }
 
-.waygpt-content::-webkit-scrollbar-thumb:hover {
-  background: #777;
+.dialoguevault-content::-webkit-scrollbar-thumb:hover {
+  background: var(--dv-khaki-beige);
+}
+
+/* Enhanced professional styling */
+.dialoguevault-turn.user .dialoguevault-turn-type::before {
+  content: "●";
+  color: var(--dv-soft-sand);
+  margin-right: 6px;
+}
+
+.dialoguevault-turn.assistant .dialoguevault-turn-type::before {
+  content: "●";
+  color: var(--dv-khaki-beige);
+  margin-right: 6px;
+}
+
+/* Focus and accessibility improvements */
+.dialoguevault-turn:focus-visible {
+  outline: 2px solid var(--dv-khaki-beige);
+  outline-offset: 2px;
+}
+
+.dialoguevault-sidebar * {
+  box-sizing: border-box;
+}
+
+/* Smooth animations */
+.dialoguevault-turn,
+.dialoguevault-turn-header,
+.dialoguevault-turn-preview {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Professional typography */
+.dialoguevault-turn-preview {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 

@@ -1,5 +1,8 @@
-// Content script that creates a ChatGPT Smart Index sidebar
-interface ConversationTurn {
+// Content script that creates a DialogueVault sidebar
+import { UniversalChatbotNavigator, type ConversationTurn } from './navigator';
+import { PlatformDetector } from './platform-detector';
+
+interface ConversationTurnLegacy {
   id: string;
   text: string;
   isUser: boolean;
@@ -7,18 +10,23 @@ interface ConversationTurn {
   preview: string;
 }
 
-class WayGPTExtension {
+class UniversalChatbotExtension {
   private sidebar: HTMLDivElement | null = null;
   private promptList: HTMLDivElement | null = null;
   private isVisible: boolean = true;
-  private prompts: ConversationTurn[] = [];
+  private prompts: ConversationTurnLegacy[] = [];
   private observer: MutationObserver | null = null;
   private debounceTimer: number | null = null;
   private expandBtn: HTMLButtonElement | null = null;
   private isMobile: boolean = window.matchMedia("(max-width: 768px)").matches;
   private selectedPromptId: string | null = null;
+  private navigator: UniversalChatbotNavigator;
+  private platformName: string;
 
   constructor() {
+    this.navigator = new UniversalChatbotNavigator();
+    this.platformName = this.navigator.getPlatformName();
+    console.log(`[DialogueVault] Initializing extension for ${this.platformName}`);
     this.init();
   }
 
@@ -49,114 +57,37 @@ class WayGPTExtension {
   }
 
   private setupObserver(): void {
-    this.observer = new MutationObserver((mutations) => {
-      let shouldUpdate = false;
-      
-      for (const mutation of mutations) {
-        if (mutation.type === 'childList') {
-          const addedNodes = Array.from(mutation.addedNodes);
-          const hasRelevantChanges = addedNodes.some(node => {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              const element = node as Element;
-              return element.matches('[data-message-author-role]') ||
-                     element.querySelector('[data-message-author-role]') ||
-                     element.matches('.group\\/conversation-turn') ||
-                     element.querySelector('.group\\/conversation-turn');
-            }
-            return false;
-          });
-          
-          if (hasRelevantChanges) {
-            shouldUpdate = true;
-            break;
-          }
-        }
-      }
-      
-      if (shouldUpdate) {
-        if (this.debounceTimer) {
-          clearTimeout(this.debounceTimer);
-        }
-        this.debounceTimer = window.setTimeout(() => {
-          this.scanForPrompts();
-        }, 500);
-      }
-    });
-
-    this.observer.observe(document.body, {
-      childList: true,
-      subtree: true
+    // Use the universal navigator's observer
+    this.navigator.startObserving(() => {
+      this.scanForPrompts();
     });
   }
 
   private scanForPrompts(): void {
-    const messageSelectors = [
-      '[data-message-author-role]',
-      '.group\\/conversation-turn',
-      '.group.w-full',
-      '[data-testid*="conversation-turn"]'
-    ];
+    console.log(`[DialogueVault] Scanning for prompts on ${this.platformName}...`);
     
-    let messages: Element[] = [];
-    for (const selector of messageSelectors) {
-      messages = Array.from(document.querySelectorAll(selector));
-      if (messages.length > 0) break;
-    }
-
-    if (messages.length === 0) {
-      console.log('[WayGPT] No conversation messages found');
+    // Get conversation turns using the universal navigator
+    const turns = this.navigator.getConversationTurns();
+    
+    if (turns.length === 0) {
+      console.log('[DialogueVault] No conversation messages found');
+      this.prompts = [];
       this.updatePromptList();
       return;
     }
 
-    console.log(`[WayGPT] Found ${messages.length} messages`);
-    this.prompts = [];
+    console.log(`[DialogueVault] Found ${turns.length} messages`);
+    
+    // Convert to legacy format for compatibility
+    this.prompts = turns.map((turn, index) => ({
+      id: `turn-${index}`,
+      text: turn.preview,
+      isUser: turn.type === 'user',
+      element: turn.element,
+      preview: turn.preview
+    }));
 
-    messages.forEach((message, index) => {
-      try {
-        // Determine role
-        let isUser = false;
-        const roleAttr = message.getAttribute('data-message-author-role');
-        if (roleAttr) {
-          isUser = roleAttr === 'user';
-        } else {
-          // Try to determine from content structure
-          const hasAvatar = message.querySelector('img[alt*="User"], .relative.p-1.rounded-sm');
-          const hasAssistantIndicator = message.querySelector('[data-testid*="turn"], .markdown, code');
-          isUser = !!(hasAvatar && !hasAssistantIndicator);
-        }
-
-        // Extract text content
-        let text = '';
-        const textContainers = message.querySelectorAll('div[class*="markdown"], .prose, p, div');
-        for (const container of textContainers) {
-          const containerText = container.textContent?.trim();
-          if (containerText && containerText.length > text.length) {
-            text = containerText;
-          }
-        }
-
-        if (!text) {
-          text = message.textContent?.trim() || '';
-        }
-
-        if (text && text.length > 10) {
-          const preview = text.length > 100 ? text.substring(0, 100) + '...' : text;
-          
-          this.prompts.push({
-            id: `turn-${index}`,
-            text,
-            isUser,
-            element: message as HTMLElement,
-            preview
-          });
-        }
-      } catch (error) {
-        console.error('[WayGPT] Error parsing message:', error);
-      }
-    });
-
-    console.log(`[WayGPT] Parsed ${this.prompts.length} conversation items`);
+    console.log(`[DialogueVault] Parsed ${this.prompts.length} conversation items`);
     this.updatePromptList();
   }
 
@@ -178,11 +109,11 @@ class WayGPTExtension {
     if (this.prompts.length === 0) {
       const emptyState = document.createElement('div');
       emptyState.className = 'empty-state';
-      emptyState.textContent = 'No conversation yet. Start chatting to see your message index here.';
+      emptyState.textContent = `No conversation detected. Start chatting to see your message index here.`;
       emptyState.style.cssText = `
         text-align: center;
         padding: 40px 24px;
-        color: #8e8ea0;
+        color: #8b7355;
         font-size: 13px;
         line-height: 1.5;
       `;
@@ -190,17 +121,35 @@ class WayGPTExtension {
       return;
     }
 
+    // Add platform indicator
+    const platformIndicator = document.createElement('div');
+    platformIndicator.textContent = `${this.platformName} Conversation`;
+    platformIndicator.style.cssText = `
+      padding: 12px 20px;
+      color: #8b7355;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid #e5d6c3;
+      background: #e8dbc9;
+      font-weight: 600;
+    `;
+    this.promptList.appendChild(platformIndicator);
+
     this.prompts.forEach((prompt) => {
       const promptElement = document.createElement('div');
       promptElement.className = 'prompt-item';
       promptElement.style.cssText = `
-        padding: 12px 20px;
-        border-bottom: 1px solid #4d4d4f;
+        padding: 16px 20px;
+        border-bottom: 1px solid #e5d6c3;
         cursor: pointer;
-        transition: background-color 0.15s ease;
-        background: #2f2f2f;
+        transition: all 0.15s ease;
+        background: #ffffff;
         margin: 0;
         position: relative;
+        border-radius: 8px;
+        margin: 4px;
+        box-shadow: 0 1px 3px rgba(93, 78, 55, 0.1);
       `;
 
       // Role indicator
@@ -210,19 +159,21 @@ class WayGPTExtension {
         left: 0;
         top: 0;
         bottom: 0;
-        width: 3px;
-        background: ${prompt.isUser ? '#19c37d' : '#ab68ff'};
+        width: 4px;
+        background: ${prompt.isUser ? '#d4c4a8' : '#d2c2a6'};
+        border-radius: 0 4px 4px 0;
       `;
 
       const roleLabel = document.createElement('div');
-      roleLabel.textContent = prompt.isUser ? 'You' : 'ChatGPT';
+      roleLabel.textContent = prompt.isUser ? 'You' : this.getAssistantName();
       roleLabel.style.cssText = `
         font-size: 11px;
-        color: ${prompt.isUser ? '#19c37d' : '#ab68ff'};
-        margin-bottom: 6px;
-        font-weight: 500;
+        color: ${prompt.isUser ? '#8b7355' : '#5d4e37'};
+        margin-bottom: 8px;
+        font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+        padding-left: 12px;
       `;
 
       const previewText = document.createElement('div');
@@ -230,12 +181,13 @@ class WayGPTExtension {
       previewText.style.cssText = `
         font-size: 13px;
         line-height: 1.4;
-        color: #ececec;
-        margin-left: 8px;
+        color: #5d4e37;
+        margin-left: 12px;
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
+        line-clamp: 3;
       `;
 
       promptElement.appendChild(roleIndicator);
@@ -243,12 +195,16 @@ class WayGPTExtension {
       promptElement.appendChild(previewText);
 
       promptElement.addEventListener('mouseover', () => {
-        promptElement.style.backgroundColor = '#40414f';
+        promptElement.style.backgroundColor = '#eee3d5';
+        promptElement.style.transform = 'translateY(-1px)';
+        promptElement.style.boxShadow = '0 2px 6px rgba(93, 78, 55, 0.15)';
       });
 
       promptElement.addEventListener('mouseout', () => {
         if (this.selectedPromptId !== prompt.id) {
-          promptElement.style.backgroundColor = '#2f2f2f';
+          promptElement.style.backgroundColor = '#ffffff';
+          promptElement.style.transform = 'translateY(0)';
+          promptElement.style.boxShadow = '0 1px 3px rgba(93, 78, 55, 0.1)';
         }
       });
 
@@ -263,17 +219,33 @@ class WayGPTExtension {
     });
   }
 
-  private scrollToPrompt(prompt: ConversationTurn): void {
+  private getAssistantName(): string {
+    switch (this.platformName) {
+      case 'ChatGPT': return 'ChatGPT';
+      case 'Claude': return 'Claude';
+      case 'Gemini': return 'Gemini';
+      case 'DeepSeek': return 'DeepSeek';
+      case 'Poe': return 'Bot';
+      case 'You.com': return 'You.com';
+      case 'Character.AI': return 'Character';
+      case 'Mistral': return 'Mistral';
+      case 'Hugging Face': return 'Assistant';
+      case 'LMSYS Chatbot Arena': return 'Bot';
+      default: return 'Assistant';
+    }
+  }
+
+  private scrollToPrompt(prompt: ConversationTurnLegacy): void {
     prompt.element.scrollIntoView({
       behavior: 'smooth',
       block: 'center'
     });
 
-    // Highlight the message briefly with ChatGPT-style highlighting
+    // Highlight the message briefly with platform-appropriate highlighting
     const originalBg = prompt.element.style.backgroundColor;
     const originalTransition = prompt.element.style.transition;
     
-    prompt.element.style.backgroundColor = '#dbeafe';
+    prompt.element.style.backgroundColor = '#e8dbc9';
     prompt.element.style.transition = 'background-color 0.3s ease';
     
     setTimeout(() => {
@@ -285,27 +257,28 @@ class WayGPTExtension {
   private setSelectedPrompt(promptId: string, promptElement: HTMLElement): void {
     // Remove previous selection
     this.promptList?.querySelectorAll('.prompt-item').forEach(item => {
-      (item as HTMLElement).style.backgroundColor = '#2f2f2f';
-      (item as HTMLElement).style.fontWeight = '';
+      (item as HTMLElement).style.backgroundColor = '#ffffff';
+      (item as HTMLElement).style.transform = 'translateY(0)';
+      (item as HTMLElement).style.boxShadow = '0 1px 3px rgba(93, 78, 55, 0.1)';
     });
 
     // Highlight selected item
     this.selectedPromptId = promptId;
-    promptElement.style.backgroundColor = '#343541';
-    promptElement.style.fontWeight = '';
+    promptElement.style.backgroundColor = '#e8dbc9';
+    promptElement.style.boxShadow = '0 2px 8px rgba(93, 78, 55, 0.15)';
   }
 
   private applySelectedStyling(): void {
     if (this.selectedPromptId && this.promptList) {
       const selectedElement = Array.from(this.promptList.querySelectorAll('.prompt-item'))
         .find(item => {
-          const promptIndex = Array.from(this.promptList!.children).indexOf(item);
+          const promptIndex = Array.from(this.promptList!.children).indexOf(item) - 1; // -1 for platform indicator
           return this.prompts[promptIndex]?.id === this.selectedPromptId;
         }) as HTMLElement;
       
       if (selectedElement) {
-        selectedElement.style.backgroundColor = '#343541';
-        selectedElement.style.fontWeight = '';
+        selectedElement.style.backgroundColor = '#e8dbc9';
+        selectedElement.style.boxShadow = '0 2px 8px rgba(93, 78, 55, 0.15)';
       }
     }
   }
@@ -330,22 +303,22 @@ class WayGPTExtension {
 
   private createSidebar(): void {
     this.sidebar = document.createElement('div');
-    this.sidebar.id = 'waygpt-smart-index';
-    this.sidebar.className = 'waygpt-sidebar';
+    this.sidebar.id = 'dialoguevault-navigator';
+    this.sidebar.className = 'dialoguevault-navigator-sidebar';
     this.sidebar.style.cssText = `
       position: fixed;
       top: 0;
       right: 0;
-      width: 300px;
+      width: 320px;
       height: 100vh;
-      background: #212121;
-      border-left: 1px solid #4d4d4f;
+      background: #e6d7c4;
+      border-left: 1px solid #d4c4a8;
       z-index: 10000;
       display: flex;
       flex-direction: column;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      transition: right 0.3s ease;
-      box-shadow: -2px 0 8px rgba(0, 0, 0, 0.3);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: -2px 0 12px rgba(93, 78, 55, 0.15);
     `;
 
     // Header
@@ -355,19 +328,19 @@ class WayGPTExtension {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 20px;
-      border-bottom: 1px solid #4d4d4f;
-      background: #2f2f2f;
+      padding: 20px;
+      border-bottom: 1px solid #d4c4a8;
+      background: #e4d5c2;
       min-height: 60px;
     `;
 
     const title = document.createElement('h3');
-    title.textContent = 'Conversation Index';
+    title.textContent = 'DialogueVault';
     title.className = 'sidebar-title';
     title.style.cssText = `
       margin: 0;
-      color: #ececec;
-      font-size: 14px;
+      color: #5d4e37;
+      font-size: 16px;
       font-weight: 600;
       letter-spacing: 0.025em;
     `;
@@ -383,10 +356,10 @@ class WayGPTExtension {
     closeBtn.style.cssText = `
       background: none;
       border: none;
-      color: #8e8ea0;
+      color: #8b7355;
       cursor: pointer;
       padding: 8px;
-      border-radius: 6px;
+      border-radius: 8px;
       transition: all 0.15s ease;
       display: flex;
       align-items: center;
@@ -396,12 +369,12 @@ class WayGPTExtension {
     `;
     closeBtn.addEventListener('click', () => this.hideSidebar());
     closeBtn.addEventListener('mouseover', () => {
-      closeBtn.style.backgroundColor = '#40414f';
-      closeBtn.style.color = '#ececec';
+      closeBtn.style.backgroundColor = '#ddceb9';
+      closeBtn.style.color = '#5d4e37';
     });
     closeBtn.addEventListener('mouseout', () => {
       closeBtn.style.backgroundColor = 'transparent';
-      closeBtn.style.color = '#8e8ea0';
+      closeBtn.style.color = '#8b7355';
     });
 
     header.appendChild(title);
@@ -413,16 +386,17 @@ class WayGPTExtension {
     this.promptList.style.cssText = `
       flex: 1;
       overflow-y: auto;
-      background: #212121;
+      background: #e6d7c4;
+      padding: 8px;
     `;
 
     const emptyState = document.createElement('div');
     emptyState.className = 'empty-state';
-    emptyState.textContent = 'No conversation yet. Start chatting to see your message index here.';
+    emptyState.textContent = 'No conversation detected. Start chatting to see your message index here.';
     emptyState.style.cssText = `
       text-align: center;
       padding: 40px 24px;
-      color: #8e8ea0;
+      color: #8b7355;
       font-size: 13px;
       line-height: 1.5;
     `;
@@ -435,9 +409,9 @@ class WayGPTExtension {
 
   private createFloatingExpandBtn(): void {
     this.expandBtn = document.createElement('button');
-    this.expandBtn.id = 'waygpt-sidebar-expand-btn';
+    this.expandBtn.id = 'dialoguevault-expand-btn';
     this.expandBtn.className = 'floating-expand-btn';
-    this.expandBtn.setAttribute('aria-label', 'Open conversation index');
+    this.expandBtn.setAttribute('aria-label', 'Open DialogueVault navigator');
     this.expandBtn.innerHTML = `
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
         <path d="M3 12h18M3 6h18M3 18h18"/>
@@ -445,16 +419,16 @@ class WayGPTExtension {
     `;
     this.expandBtn.style.cssText = `
       position: fixed;
-      width: 44px;
-      height: 44px;
-      border-radius: 8px;
-      background: #ffffff;
-      color: #374151;
-      border: 1px solid #d1d5db;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: #e6d7c4;
+      color: #5d4e37;
+      border: 1px solid #d4c4a8;
       cursor: pointer;
       z-index: 10001;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      transition: all 0.15s ease;
+      box-shadow: 0 2px 8px rgba(93, 78, 55, 0.15);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -464,17 +438,19 @@ class WayGPTExtension {
     // Add hover effects
     this.expandBtn.addEventListener('mouseover', () => {
       if (this.expandBtn) {
-        this.expandBtn.style.backgroundColor = '#f9fafb';
-        this.expandBtn.style.borderColor = '#9ca3af';
-        this.expandBtn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+        this.expandBtn.style.backgroundColor = '#e4d5c2';
+        this.expandBtn.style.borderColor = '#d2c2a6';
+        this.expandBtn.style.boxShadow = '0 4px 12px rgba(93, 78, 55, 0.2)';
+        this.expandBtn.style.transform = 'translateY(-1px)';
       }
     });
     
     this.expandBtn.addEventListener('mouseout', () => {
       if (this.expandBtn) {
-        this.expandBtn.style.backgroundColor = '#ffffff';
-        this.expandBtn.style.borderColor = '#d1d5db';
-        this.expandBtn.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+        this.expandBtn.style.backgroundColor = '#e6d7c4';
+        this.expandBtn.style.borderColor = '#d4c4a8';
+        this.expandBtn.style.boxShadow = '0 2px 8px rgba(93, 78, 55, 0.15)';
+        this.expandBtn.style.transform = 'translateY(0)';
       }
     });
     
@@ -590,32 +566,6 @@ class WayGPTExtension {
     this.showExpandBtn();
   }
 
-  private updateLayout(): void {
-    if (!this.sidebar) return;
-    
-    const wasDesktop = window.innerWidth >= 768;
-    if (this.isMobile === (window.innerWidth >= 768)) {
-      this.isMobile = window.innerWidth < 768;
-      this.setupResponsiveLayout();
-    }
-  }
-
-  private setupResponsiveLayout(): void {
-    if (!this.sidebar || !this.expandBtn) return;
-
-    if (this.isMobile) {
-      // Mobile layout
-      this.sidebar.style.width = '100%';
-      this.sidebar.style.height = '100%';
-      this.sidebar.style.right = this.isVisible ? '0' : '-100%';
-    } else {
-      // Desktop layout  
-      this.sidebar.style.width = '300px';
-      this.sidebar.style.height = '100vh';
-      this.sidebar.style.right = this.isVisible ? '0' : '-300px';
-    }
-  }
-
   private toggleSidebar(): void {
     if (this.isVisible) {
       this.hideSidebar();
@@ -623,8 +573,7 @@ class WayGPTExtension {
       this.showSidebar();
     }
   }
-
 }
 
 // Initialize the extension
-new WayGPTExtension();
+new UniversalChatbotExtension();

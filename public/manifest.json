@@ -1,25 +1,53 @@
 {
   "manifest_version": 3,
-  "name": "WayGPT React",
-  "version": "1.0.0",
-  "description": "Navigate long ChatGPT conversations with ease using an intelligent sidebar index of all your prompts and responses.",
+  "name": "DialogueVault",
+  "version": "2.0.0",
+  "description": "Professional conversation navigation for ChatGPT, Claude, Gemini, DeepSeek, and other AI chatbots with an intelligent sidebar index.",
   "permissions": [
     "activeTab"
   ],
   "content_scripts": [
     {
-      "matches": ["https://chat.openai.com/*", "https://chatgpt.com/*"],
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://bard.google.com/*",
+        "https://chat.deepseek.com/*",
+        "https://poe.com/*",
+        "https://you.com/*",
+        "https://character.ai/*",
+        "https://beta.character.ai/*",
+        "https://chat.mistral.ai/*",
+        "https://huggingface.co/*",
+        "https://chat.lmsys.org/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_end"
     }
   ],
   "action": {
-    "default_title": "WayGPT React"
+    "default_title": "DialogueVault"
   },
   "web_accessible_resources": [
     {
       "resources": ["sidebar.html"],
-      "matches": ["https://chat.openai.com/*", "https://chatgpt.com/*"]
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://bard.google.com/*",
+        "https://chat.deepseek.com/*",
+        "https://poe.com/*",
+        "https://you.com/*",
+        "https://character.ai/*",
+        "https://beta.character.ai/*",
+        "https://chat.mistral.ai/*",
+        "https://huggingface.co/*",
+        "https://chat.lmsys.org/*"
+      ]
     }
   ]
 }

@@ -17,7 +17,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
   useEffect(() => {
     // Listen for messages from content script
     const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'WAYGPT_UPDATE_TURNS') {
+      if (event.data.type === 'DIALOGUEVAULT_UPDATE_TURNS') {
         setTurns(event.data.turns);
         setIsDesktop(event.data.isDesktop);
       }
@@ -32,33 +32,33 @@ export const Sidebar: React.FC<SidebarProps> = () => {
     
     // Send message to content script to scroll
     window.parent.postMessage({
-      type: 'WAYGPT_SCROLL_TO_TURN',
+      type: 'DIALOGUEVAULT_SCROLL_TO_TURN',
       index
     }, '*');
   };
 
   const handleClose = () => {
     window.parent.postMessage({
-      type: 'WAYGPT_CLOSE_SIDEBAR'
+      type: 'DIALOGUEVAULT_CLOSE_SIDEBAR'
     }, '*');
   };
 
   return (
-    <div className="waygpt-sidebar">
-      <div className="waygpt-content">
+    <div className="dialoguevault-sidebar">
+      <div className="dialoguevault-content">
         {turns.length === 0 ? (
-          <div className="waygpt-empty">
-            <p>No conversation found</p>
-            <p className="waygpt-empty-subtitle">
-              Start a conversation with ChatGPT to see the navigation index
+          <div className="dialoguevault-empty">
+            <p>No conversation detected</p>
+            <p className="dialoguevault-empty-subtitle">
+              Navigate your conversation with the sidebar index once you start chatting
             </p>
           </div>
         ) : (
-          <div className="waygpt-turns">
+          <div className="dialoguevault-turns">
             {turns.map((turn, index) => (
               <div
                 key={index}
-                className={`waygpt-turn ${turn.type} ${
+                className={`dialoguevault-turn ${turn.type} ${
                   selectedIndex === index ? 'selected' : ''
                 }`}
                 onClick={() => handleTurnClick(index)}
@@ -71,15 +71,15 @@ export const Sidebar: React.FC<SidebarProps> = () => {
                   }
                 }}
               >
-                <div className="waygpt-turn-header">
-                  <span className="waygpt-turn-number">
+                <div className="dialoguevault-turn-header">
+                  <span className="dialoguevault-turn-number">
                     {index + 1}
                   </span>
-                  <span className="waygpt-turn-type">
-                    {turn.type === 'user' ? '👤' : '🤖'}
+                  <span className="dialoguevault-turn-type">
+                    {turn.type === 'user' ? 'You' : 'Assistant'}
                   </span>
                 </div>
-                <div className="waygpt-turn-preview">
+                <div className="dialoguevault-turn-preview">
                   {turn.preview}
                 </div>
               </div>
@@ -88,9 +88,9 @@ export const Sidebar: React.FC<SidebarProps> = () => {
         )}
       </div>
 
-      <div className="waygpt-footer">
-        <div className="waygpt-shortcut">
-          Press Ctrl+Shift+I to toggle
+      <div className="dialoguevault-footer">
+        <div className="dialoguevault-shortcut">
+          Ctrl+Shift+I to toggle
         </div>
       </div>
     </div>

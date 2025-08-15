@@ -1,3 +1,5 @@
+import { PlatformDetector, type PlatformConfig, type ChatbotPlatform } from './platform-detector';
+
 export interface ConversationTurn {
   index: number;
   type: 'user' | 'assistant';
@@ -5,23 +7,32 @@ export interface ConversationTurn {
   element: HTMLElement;
 }
 
-export class ChatGPTNavigator {
+export class UniversalChatbotNavigator {
   private observer: MutationObserver | null = null;
   private updateCallback: (() => void) | null = null;
+  private platformConfig: PlatformConfig;
+  private platform: ChatbotPlatform;
+
+  constructor() {
+    this.platformConfig = PlatformDetector.detectPlatform();
+    this.platform = this.platformConfig.platform;
+    console.log(`[DialogueVault] Initialized for ${this.platformConfig.name}`);
+  }
 
   // Debug function to analyze page structure
-  debugPageStructure(): void {
-    console.log('[WayGPT] === DEBUG PAGE STRUCTURE ===');
-    console.log('[WayGPT] URL:', window.location.href);
-    console.log('[WayGPT] Title:', document.title);
+  private debugPageStructure(): void {
+    console.log('[DialogueVault] === DEBUG PAGE STRUCTURE ===');
+    console.log('[DialogueVault] Platform:', this.platformConfig.name);
+    console.log('[DialogueVault] URL:', window.location.href);
+    console.log('[DialogueVault] Title:', document.title);
     
-    const main = document.querySelector('main');
-    console.log('[WayGPT] Main element:', main ? 'found' : 'not found');
+    const main = document.querySelector('main') || document.body;
+    console.log('[DialogueVault] Main element:', main ? 'found' : 'not found');
     
     if (main) {
-      console.log('[WayGPT] Main children count:', main.children.length);
+      console.log('[DialogueVault] Main children count:', main.children.length);
       const divs = main.querySelectorAll('div');
-      console.log('[WayGPT] Divs in main:', divs.length);
+      console.log('[DialogueVault] Divs in main:', divs.length);
       
       // Show first few divs with substantial text
       const textDivs = Array.from(divs).filter(div => {
@@ -31,23 +42,16 @@ export class ChatGPTNavigator {
       
       textDivs.forEach((div, i) => {
         const text = div.textContent?.trim().substring(0, 100) + '...';
-        console.log(`[WayGPT] Text div ${i}:`, text);
-        console.log(`[WayGPT] Classes:`, div.className);
-        console.log(`[WayGPT] Data attrs:`, Array.from(div.attributes).filter(attr => attr.name.startsWith('data-')));
+        console.log(`[DialogueVault] Text div ${i}:`, text);
+        console.log(`[DialogueVault] Classes:`, div.className);
+        console.log(`[DialogueVault] Data attrs:`, Array.from(div.attributes).filter(attr => attr.name.startsWith('data-')));
       });
     }
     
-    // Check for common selectors
-    const commonSelectors = [
-      '[data-message-author-role]',
-      '[data-testid*="conversation"]',
-      '.group.w-full',
-      '[role="presentation"]'
-    ];
-    
-    commonSelectors.forEach(selector => {
+    // Check platform-specific selectors
+    this.platformConfig.messageSelectors.forEach(selector => {
       const elements = document.querySelectorAll(selector);
-      console.log(`[WayGPT] Selector "${selector}": ${elements.length} elements`);
+      console.log(`[DialogueVault] Selector "${selector}": ${elements.length} elements`);
     });
   }
 
@@ -55,22 +59,50 @@ export class ChatGPTNavigator {
     this.updateCallback = callback;
     
     // Create mutation observer to detect changes
-    this.observer = new MutationObserver(() => {
-      // Debounce updates
-      setTimeout(() => {
-        if (this.updateCallback) {
-          this.updateCallback();
+    this.observer = new MutationObserver((mutations) => {
+      let shouldUpdate = false;
+      
+      for (const mutation of mutations) {
+        if (mutation.type === 'childList') {
+          const addedNodes = Array.from(mutation.addedNodes);
+          const hasRelevantChanges = addedNodes.some(node => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node as Element;
+              // Check if any added node matches our platform's message selectors
+              return this.platformConfig.messageSelectors.some(selector => 
+                element.matches(selector) || element.querySelector(selector)
+              );
+            }
+            return false;
+          });
+          
+          if (hasRelevantChanges) {
+            shouldUpdate = true;
+            break;
+          }
         }
-      }, 500);
+      }
+      
+      if (shouldUpdate) {
+        // Debounce updates
+        setTimeout(() => {
+          if (this.updateCallback) {
+            this.updateCallback();
+          }
+        }, 500);
+      }
     });
 
     // Start observing
-    const targetNode = document.body;
+    const targetNode = this.platformConfig.containerSelector 
+      ? document.querySelector(this.platformConfig.containerSelector) || document.body
+      : document.body;
+      
     this.observer.observe(targetNode, {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['class']
+      attributeFilter: ['class', 'data-message-author-role', 'data-testid', 'data-role', 'data-author', 'data-from']
     });
   }
 
@@ -84,25 +116,15 @@ export class ChatGPTNavigator {
   getConversationTurns(): ConversationTurn[] {
     const turns: ConversationTurn[] = [];
     
-    console.log('[WayGPT] Starting conversation detection...');
-    console.log('[WayGPT] Current URL:', window.location.href);
+    console.log(`[DialogueVault] Starting conversation detection for ${this.platformConfig.name}...`);
+    console.log('[DialogueVault] Current URL:', window.location.href);
     
-    // Simple and direct approach - look for the most common patterns
-    const possibleSelectors = [
-      // Modern ChatGPT selectors (2024-2025)
-      '[data-message-author-role]',
-      '[data-testid*="conversation-turn"]',
-      'div[class*="group"][class*="w-full"]',
-      '.group.w-full',
-      'main div[class*="flex"][class*="flex-col"]',
-      'main > div > div > div > div'
-    ];
-
     let foundElements: Element[] = [];
     
-    for (const selector of possibleSelectors) {
+    // Try platform-specific selectors first
+    for (const selector of this.platformConfig.messageSelectors) {
       const elements = document.querySelectorAll(selector);
-      console.log(`[WayGPT] Selector "${selector}" found ${elements.length} elements`);
+      console.log(`[DialogueVault] Selector "${selector}" found ${elements.length} elements`);
       
       if (elements.length > 0) {
         // Filter for elements that actually contain text content
@@ -113,7 +135,7 @@ export class ChatGPTNavigator {
         
         if (validElements.length > 0) {
           foundElements = validElements;
-          console.log(`[WayGPT] Using ${validElements.length} valid elements from selector: ${selector}`);
+          console.log(`[DialogueVault] Using ${validElements.length} valid elements from selector: ${selector}`);
           break;
         }
       }
@@ -121,13 +143,19 @@ export class ChatGPTNavigator {
 
     // If no specific selectors work, try a more general approach
     if (foundElements.length === 0) {
-      console.log('[WayGPT] No elements found with specific selectors, trying general approach...');
+      console.log('[DialogueVault] No elements found with specific selectors, trying general approach...');
       
-      // Look for any divs in main content that might be messages
-      const main = document.querySelector('main');
-      if (main) {
-        const allDivs = main.querySelectorAll('div');
-        console.log(`[WayGPT] Found ${allDivs.length} divs in main`);
+      // Look for any elements that might be messages
+      const container = document.querySelector('main') || 
+                       document.querySelector('[role="main"]') || 
+                       document.querySelector('.chat') ||
+                       document.querySelector('[class*="chat"]') ||
+                       document.querySelector('[class*="conversation"]') ||
+                       document.body;
+      
+      if (container) {
+        const allDivs = container.querySelectorAll('div');
+        console.log(`[DialogueVault] Found ${allDivs.length} divs in container`);
         
         // Filter divs that look like messages
         foundElements = Array.from(allDivs).filter(div => {
@@ -135,16 +163,17 @@ export class ChatGPTNavigator {
           const hasEnoughText = text.length > 50;
           const hasChildren = div.children.length > 0;
           const notTooDeep = div.querySelectorAll('div').length < 50; // Avoid container divs
+          const hasRelevantClasses = div.className.toLowerCase().match(/message|chat|conversation|turn|response|prompt/);
           
-          return hasEnoughText && hasChildren && notTooDeep;
+          return hasEnoughText && hasChildren && notTooDeep && (hasRelevantClasses || text.length > 100);
         });
         
-        console.log(`[WayGPT] Filtered to ${foundElements.length} potential message elements`);
+        console.log(`[DialogueVault] Filtered to ${foundElements.length} potential message elements`);
       }
     }
 
     if (foundElements.length === 0) {
-      console.log('[WayGPT] No conversation elements found at all');
+      console.log('[DialogueVault] No conversation elements found at all');
       return turns;
     }
 
@@ -156,7 +185,7 @@ export class ChatGPTNavigator {
       if (role) {
         const preview = this.extractPreview(htmlElement);
         if (preview && preview.length > 3) {
-          console.log(`[WayGPT] Turn ${turns.length + 1}: ${role} - "${preview.substring(0, 60)}..."`);
+          console.log(`[DialogueVault] Turn ${turns.length + 1}: ${role} - "${preview.substring(0, 60)}..."`);
           turns.push({
             index: turns.length,
             type: role,
@@ -167,63 +196,104 @@ export class ChatGPTNavigator {
       }
     });
 
-    console.log(`[WayGPT] Final result: ${turns.length} conversation turns found`);
+    console.log(`[DialogueVault] Final result: ${turns.length} conversation turns found`);
     return turns;
   }
 
   private determineRole(element: HTMLElement): 'user' | 'assistant' | null {
-    console.log(`[WayGPT] Determining role for element with class: ${element.className}`);
+    console.log(`[DialogueVault] Determining role for element with class: ${element.className}`);
     
-    // Method 1: Check data attributes (most reliable)
-    const authorRole = element.getAttribute('data-message-author-role');
-    if (authorRole === 'user') {
-      console.log('[WayGPT] Found user role via data-message-author-role');
-      return 'user';
-    }
-    if (authorRole === 'assistant') {
-      console.log('[WayGPT] Found assistant role via data-message-author-role');
-      return 'assistant';
-    }
-
-    // Method 2: Check parent elements for role attributes
-    let current: HTMLElement | null = element;
-    for (let i = 0; i < 3; i++) {
-      if (!current) break;
-      const role = current.getAttribute('data-message-author-role');
-      if (role === 'user' || role === 'assistant') {
-        console.log(`[WayGPT] Found ${role} role via parent element`);
-        return role as 'user' | 'assistant';
-      }
-      current = current.parentElement;
-    }
-
-    // Method 3: Look for SVG icons (ChatGPT messages often have SVG icons)
-    const svgs = element.querySelectorAll('svg');
-    if (svgs.length > 0) {
-      console.log('[WayGPT] Found SVG, assuming assistant role');
-      return 'assistant';
-    }
-
-    // Method 4: Look for images/avatars
-    const images = element.querySelectorAll('img');
-    for (const img of images) {
-      const alt = img.alt?.toLowerCase() || '';
-      const src = img.src?.toLowerCase() || '';
-      if (alt.includes('user') || src.includes('user')) {
-        console.log('[WayGPT] Found user indicator in image');
+    // Method 1: Check platform-specific user indicators
+    for (const selector of this.platformConfig.userIndicators) {
+      if (element.matches(selector) || element.querySelector(selector)) {
+        console.log(`[DialogueVault] Found user role via selector: ${selector}`);
         return 'user';
       }
-      if (alt.includes('gpt') || alt.includes('assistant') || src.includes('gpt')) {
-        console.log('[WayGPT] Found assistant indicator in image');
+    }
+    
+    // Method 2: Check platform-specific assistant indicators
+    for (const selector of this.platformConfig.assistantIndicators) {
+      if (element.matches(selector) || element.querySelector(selector)) {
+        console.log(`[DialogueVault] Found assistant role via selector: ${selector}`);
         return 'assistant';
       }
     }
 
-    // Method 5: Simple alternating pattern based on document order
-    const main = document.querySelector('main');
-    if (main) {
+    // Method 3: Check parent elements for role attributes
+    let current: HTMLElement | null = element;
+    for (let i = 0; i < 3; i++) {
+      if (!current) break;
+      
+      // Common role attributes across platforms
+      const roleAttrs = [
+        'data-message-author-role',
+        'data-role',
+        'data-author',
+        'data-from',
+        'data-testid'
+      ];
+      
+      for (const attr of roleAttrs) {
+        const value = current.getAttribute(attr)?.toLowerCase() || '';
+        if (value.includes('user') || value.includes('human')) {
+          console.log(`[DialogueVault] Found user role via ${attr}="${value}"`);
+          return 'user';
+        }
+        if (value.includes('assistant') || value.includes('bot') || value.includes('ai') || value.includes('gpt') || value.includes('claude') || value.includes('gemini')) {
+          console.log(`[DialogueVault] Found assistant role via ${attr}="${value}"`);
+          return 'assistant';
+        }
+      }
+      
+      current = current.parentElement;
+    }
+
+    // Method 4: Look for common UI patterns
+    // Check for typical user indicators
+    const userPatterns = [
+      'img[alt*="user" i]',
+      'img[alt*="you" i]',
+      '[class*="user" i]',
+      '[class*="human" i]',
+      'div[style*="align-items: flex-end"]', // Often user messages are right-aligned
+      'div[style*="justify-content: flex-end"]'
+    ];
+    
+    for (const pattern of userPatterns) {
+      if (element.querySelector(pattern)) {
+        console.log(`[DialogueVault] Found user indicator via pattern: ${pattern}`);
+        return 'user';
+      }
+    }
+    
+    // Check for typical assistant indicators
+    const assistantPatterns = [
+      'svg',
+      '[class*="bot" i]',
+      '[class*="ai" i]',
+      '[class*="assistant" i]',
+      '[class*="gpt" i]',
+      '[class*="claude" i]',
+      '[class*="gemini" i]',
+      'img[alt*="bot" i]',
+      'img[alt*="ai" i]',
+      'code', // Assistant messages often contain code
+      'pre', // Pre-formatted text
+      '.markdown' // Markdown formatting
+    ];
+    
+    for (const pattern of assistantPatterns) {
+      if (element.querySelector(pattern)) {
+        console.log(`[DialogueVault] Found assistant indicator via pattern: ${pattern}`);
+        return 'assistant';
+      }
+    }
+
+    // Method 5: Simple alternating pattern based on document order (fallback)
+    const container = document.querySelector('main') || document.body;
+    if (container) {
       // Get all potential message elements
-      const allMessages = main.querySelectorAll('div');
+      const allMessages = container.querySelectorAll('div');
       const validMessages = Array.from(allMessages).filter(div => {
         const text = div.textContent?.trim() || '';
         return text.length > 50;
@@ -232,33 +302,44 @@ export class ChatGPTNavigator {
       const index = Array.from(validMessages).findIndex(div => div === element);
       if (index >= 0) {
         const role = index % 2 === 0 ? 'user' : 'assistant';
-        console.log(`[WayGPT] Using alternating pattern: index ${index} = ${role}`);
+        console.log(`[DialogueVault] Using alternating pattern: index ${index} = ${role}`);
         return role;
       }
     }
 
-    console.log('[WayGPT] Could not determine role, returning null');
+    console.log('[DialogueVault] Could not determine role, returning null');
     return null;
   }
 
   private extractPreview(element: HTMLElement): string {
-    // Try multiple text extraction strategies
-    const textSelectors = [
-      '.markdown', // Markdown formatted content
-      '[data-message-text]', // Direct message text
-      '.prose', // Prose content
-      'p', // Paragraphs
-      'div[class*="message"]', // Message divs
-      'span', // Span elements
-      'div' // Generic divs
-    ];
-
-    // First, try specific selectors
-    for (const selector of textSelectors) {
+    // Try platform-specific text extraction first
+    for (const selector of this.platformConfig.textSelectors) {
       const textElement = element.querySelector(selector);
       if (textElement && textElement.textContent) {
         const text = textElement.textContent.trim();
-        if (text.length > 10) { // Ensure we have substantial content
+        if (text.length > 10) {
+          return this.truncateText(text, 100);
+        }
+      }
+    }
+
+    // Try common text extraction strategies
+    const commonSelectors = [
+      '.markdown',
+      '.prose',
+      '[class*="content"]',
+      '[class*="text"]',
+      '[class*="message"]',
+      'p',
+      'span',
+      'div'
+    ];
+
+    for (const selector of commonSelectors) {
+      const textElement = element.querySelector(selector);
+      if (textElement && textElement.textContent) {
+        const text = textElement.textContent.trim();
+        if (text.length > 10) {
           return this.truncateText(text, 100);
         }
       }
@@ -281,5 +362,9 @@ export class ChatGPTNavigator {
   private truncateText(text: string, maxLength: number): string {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength - 3) + '...';
+  }
+  
+  getPlatformName(): string {
+    return this.platformConfig.name;
   }
 }

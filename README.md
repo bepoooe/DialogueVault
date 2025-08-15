@@ -1,24 +1,52 @@
-# WayGPT React - ChatGPT Smart Index (Chrome Extension)
+# DialogueVault - Professional Conversation Navigator
 
-A modern React + TypeScript Chrome extension that provides intelligent navigation for long ChatGPT conversations with a sidebar index.
+A sophisticated React + TypeScript Chrome extension that provides professional conversation navigation for **multiple AI chatbot platforms** including ChatGPT, Claude, Gemini, DeepSeek, and many others.
+
+## 🌐 Supported Platforms
+
+- **OpenAI ChatGPT** (chat.openai.com, chatgpt.com)
+- **Anthropic Claude** (claude.ai)
+- **Google Gemini/Bard** (gemini.google.com, bard.google.com)
+- **DeepSeek** (chat.deepseek.com)
+- **Poe** (poe.com)
+- **You.com** (you.com)
+- **Character.AI** (character.ai)
+- **Mistral** (chat.mistral.ai)
+- **Hugging Face** (huggingface.co/chat)
+- **LMSYS Chatbot Arena** (chat.lmsys.org)
+- **And more** (with intelligent fallback detection)
 
 ## Features
+
+### ✨ Professional Design
+- **Clean, modern interface** with warm beige color palette
+- **Professional typography** for enhanced readability  
+- **Subtle animations** and smooth transitions
+- **Consistent styling** across all supported platforms
 
 ### 🚀 Built with Modern Technologies
 - **React 18** with TypeScript for type safety
 - **Webpack 5** for efficient bundling
 - **Chrome Extension Manifest V3** for latest Chrome compatibility
+- **Platform Detection System** for intelligent chatbot platform recognition
 
-### 📱 Responsive Design
+### � Universal Compatibility
+- **Auto-detection** of chatbot platform with smart fallbacks
+- **Platform-specific selectors** for optimal message parsing
+- **Adaptive UI** that shows the current platform name
+- **Unified interface** that works consistently across all platforms
+
+### �📱 Responsive Design
 - **Desktop**: Docked right sidebar with collapse/expand functionality
 - **Mobile/Tablet**: Full-screen overlay with floating launcher
 - **Auto-detection** of device type for optimal UX
 
 ### 🧭 Smart Navigation
-- **Live conversation index** that updates automatically
-- **Click to jump** to any prompt or response instantly
-- **Visual highlighting** of selected turns
-- **Compact previews** for quick scanning
+- **Live conversation index** that updates automatically across all platforms
+- **One-click navigation** to any prompt or response instantly
+- **Professional highlighting** of selected conversations
+- **Clean previews** for quick scanning
+- **Platform indicator** showing which chatbot you're using
 
 ### ⌨️ Accessibility
 - **Keyboard shortcuts**: `Ctrl+Shift+I` to toggle sidebar
@@ -27,9 +55,9 @@ A modern React + TypeScript Chrome extension that provides intelligent navigatio
 - **Focus management** for better UX
 
 ### 🎨 Polished Interface
-- **Dark theme** that matches ChatGPT's aesthetic
+- **Dark theme** that matches modern chatbot aesthetics
 - **Smooth animations** and transitions
-- **Green accent colors** for brand consistency
+- **Platform-adaptive** role labels (ChatGPT, Claude, Gemini, etc.)
 - **Mobile-optimized** touch interactions
 
 ## Installation
@@ -38,7 +66,7 @@ A modern React + TypeScript Chrome extension that provides intelligent navigatio
 
 1. **Clone and setup**:
    ```bash
-   cd Extension
+   cd Chatbot-Indexer
    npm install
    npm run build
    ```
