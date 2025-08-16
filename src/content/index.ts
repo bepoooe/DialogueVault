@@ -104,6 +104,7 @@ class UniversalChatbotExtension {
   private setupKeyboardShortcuts(): void {
     // Keyboard shortcut: Ctrl+Shift+I - Toggle sidebar
     // Keyboard shortcut: Ctrl+Shift+R - Refresh conversation
+    // Keyboard shortcut: Ctrl+Shift+B - Debug mode
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'I') {
         e.preventDefault();
@@ -114,7 +115,53 @@ class UniversalChatbotExtension {
         console.log('[DialogueVault] Keyboard refresh triggered');
         this.scanForPrompts();
       }
+      if (e.ctrlKey && e.shiftKey && e.key === 'B') {
+        e.preventDefault();
+        this.debugMode();
+      }
     });
+  }
+  
+  private debugMode(): void {
+    console.log('[DialogueVault] === DEBUG MODE ACTIVATED ===');
+    console.log('[DialogueVault] Platform:', this.platformName);
+    console.log('[DialogueVault] URL:', window.location.href);
+    console.log('[DialogueVault] Current prompts found:', this.prompts.length);
+    
+    // Analyze the current page structure
+    const main = document.querySelector('main');
+    console.log('[DialogueVault] Main element:', main ? 'found' : 'not found');
+    
+    if (main) {
+      const allDivs = main.querySelectorAll('div');
+      console.log('[DialogueVault] Total divs in main:', allDivs.length);
+      
+      // Check for ChatGPT-specific elements
+      if (this.platformName === 'ChatGPT') {
+        const roleElements = document.querySelectorAll('[data-message-author-role]');
+        console.log('[DialogueVault] Elements with data-message-author-role:', roleElements.length);
+        
+        roleElements.forEach((el, i) => {
+          if (i < 5) { // Log first 5
+            const role = el.getAttribute('data-message-author-role');
+            const text = el.textContent?.trim().substring(0, 100) + '...';
+            console.log(`[DialogueVault] Role element ${i}: ${role} - "${text}"`);
+          }
+        });
+        
+        const groupElements = document.querySelectorAll('.group');
+        console.log('[DialogueVault] Elements with .group class:', groupElements.length);
+        
+        const textPrimaryElements = document.querySelectorAll('[class*="text-token-text-primary"]');
+        console.log('[DialogueVault] Elements with text-token-text-primary:', textPrimaryElements.length);
+      }
+    }
+    
+    // Test navigator
+    const turns = this.navigator.getConversationTurns();
+    console.log('[DialogueVault] Navigator found turns:', turns.length);
+    
+    alert(`Debug info logged to console. Found ${this.prompts.length} prompts and ${turns.length} turns. Check browser console for details.`);
   }
 
   private setupMessageListener(): void {

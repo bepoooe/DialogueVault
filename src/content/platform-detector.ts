@@ -16,20 +16,30 @@ export class PlatformDetector {
       name: 'ChatGPT',
       platform: 'chatgpt',
       messageSelectors: [
-        '[data-message-author-role][data-message-id]',
-        '[data-message-author-role]:has(.markdown)',
-        '[data-message-author-role]:not(:empty)'
+        '[data-message-author-role]',
+        '[data-message-id]',
+        'div[class*="group"][class*="text-token-text-primary"]',
+        'div[class*="flex"][class*="gap-4"]',
+        'div[class*="w-full"][class*="text-token-text-primary"]',
+        '.group.w-full',
+        '.group.text-token-text-primary',
+        '[data-testid*="conversation-turn"]'
       ],
       userIndicators: [
-        '[data-message-author-role="user"]'
+        '[data-message-author-role="user"]',
+        'div[class*="text-token-text-primary"]:has(> div)',
+        '.max-w-2xl'
       ],
       assistantIndicators: [
-        '[data-message-author-role="assistant"]'
+        '[data-message-author-role="assistant"]',
+        'div[class*="group"][class*="text-token-text-primary"]'
       ],
       textSelectors: [
         'div[class*="markdown"]',
         '.prose',
         'div[data-message-text="true"]',
+        'div[class*="whitespace-pre-wrap"]',
+        'div[class*="text-message"]',
         'p',
         'div'
       ]

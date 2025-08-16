@@ -119,7 +119,39 @@ export class UniversalChatbotNavigator {
     console.log(`[DialogueVault] Starting conversation detection for ${this.platformConfig.name}...`);
     console.log('[DialogueVault] Current URL:', window.location.href);
     
-    // Add platform-specific debugging
+    // Enhanced debugging for ChatGPT
+    if (this.platform === 'chatgpt') {
+      console.log('[DialogueVault] ChatGPT-specific debugging...');
+      
+      // Check for common ChatGPT elements
+      const dataRoleElements = document.querySelectorAll('[data-message-author-role]');
+      console.log(`[DialogueVault] Elements with data-message-author-role: ${dataRoleElements.length}`);
+      
+      const groupElements = document.querySelectorAll('div.group');
+      console.log(`[DialogueVault] Elements with .group class: ${groupElements.length}`);
+      
+      const textPrimaryElements = document.querySelectorAll('[class*="text-token-text-primary"]');
+      console.log(`[DialogueVault] Elements with text-token-text-primary: ${textPrimaryElements.length}`);
+      
+      // Check for conversation container
+      const main = document.querySelector('main');
+      if (main) {
+        console.log('[DialogueVault] Main element found, children:', main.children.length);
+        const conversations = main.querySelectorAll('div[class*="flex"], div[class*="group"]');
+        console.log(`[DialogueVault] Potential conversation elements in main: ${conversations.length}`);
+      }
+      
+      // Debug first few elements
+      dataRoleElements.forEach((el, i) => {
+        if (i < 3) {
+          const role = el.getAttribute('data-message-author-role');
+          const text = el.textContent?.trim().substring(0, 100) + '...';
+          console.log(`[DialogueVault] Role element ${i}: role=${role}, text="${text}"`);
+        }
+      });
+    }
+    
+    // Add platform-specific debugging for Gemini
     if (this.platform === 'gemini') {
       console.log('[DialogueVault] Gemini-specific debugging...');
       const geminiMessages = document.querySelectorAll('message-content, [jsname], .conversation-turn');
@@ -139,59 +171,46 @@ export class UniversalChatbotNavigator {
           const text = el.textContent?.trim() || '';
           const hasEnoughText = text.length > 20; // Must have substantial content
           
-          // For ChatGPT, be VERY specific about what constitutes a valid message
+          // For ChatGPT, be more lenient with filtering
           if (this.platform === 'chatgpt') {
-            // Must have a role attribute
+            // Check for role attribute OR meaningful text content
             const hasRole = el.hasAttribute('data-message-author-role');
-            if (!hasRole) return false;
+            const hasGroupClass = el.classList.contains('group');
+            const hasTextPrimary = el.className.includes('text-token-text-primary');
             
-            // Skip if it's just placeholder/system/debug text
-            // Match a variety of short UI/system strings or greetings that are not real conversation turns.
-            const isPlaceholderText = text.match(/(what's on your mind today\?|how can i help|chatgpt\b|user\b|assistant\b|temporary chat|this chat won't appear|this chat will not appear|ask anything)/i);
-            const isDebugText = text.includes('window.__oai_') || 
-                              text.includes('window._oai_') ||
-                              text.includes('__oai_logHTML') ||
-                              text.includes('__oai_SSR') ||
-                              text.match(/window\.__.*?\(/);
+            // Skip obvious system/placeholder text but be less aggressive
+            const isPlaceholderText = text.match(/(^what's on your mind today\?$|^how can i help\?$|^chatgpt$|^user$|^assistant$)/i);
+            const isDebugText = text.includes('window.__oai_') || text.includes('window._oai_');
             
             if (isPlaceholderText || isDebugText) {
-              console.log(`[DialogueVault] Filtering out: "${text.substring(0, 50)}..."`);
+              console.log(`[DialogueVault] Filtering out placeholder: "${text.substring(0, 50)}..."`);
               return false;
             }
             
-            // Must have actual markdown content or be substantial user input
-            const hasMarkdown = el.querySelector('div[class*="markdown"]') || el.querySelector('.prose');
-            const isSubstantialContent = text.length > 50 && 
-                                       !text.includes('Temporary Chat') &&
-                                       !text.includes('window.') &&
-                                       !text.match(/^(ChatGPT|User|Assistant)[\s\n]*$/i);
+            // More inclusive criteria for ChatGPT
+            const hasValidContent = hasEnoughText && !text.includes('window.');
+            const hasRoleOrGrouping = hasRole || hasGroupClass || hasTextPrimary;
             
-            // Skip system messages and UI elements
-            const isSystemMessage = text.includes("This chat won't appear in history") || 
-                                  text.includes("safety purposes") ||
-                                  text.includes("window.") ||
-                                  text.length < 30;
-            
-            return hasRole && (hasMarkdown || isSubstantialContent) && !isSystemMessage;
+            return hasValidContent && (hasRoleOrGrouping || text.length > 100);
           }
           
           return hasEnoughText;
         });
 
-        // Additional filtering for ChatGPT to avoid nested elements and ensure unique messages
+        // Less aggressive filtering for ChatGPT
         if (this.platform === 'chatgpt' && validElements.length > 0) {
           validElements = validElements.filter((el, index) => {
+            const text = el.textContent?.trim() || '';
+            
             // Check if this element is contained within another element in our list
             const isNested = validElements.some((otherEl, otherIndex) => {
-              return index !== otherIndex && otherEl.contains(el);
+              return index !== otherIndex && otherEl.contains(el) && otherEl !== el;
             });
             
-            // Also filter out elements that don't have meaningful conversational content
-            const text = el.textContent?.trim() || '';
+            // More lenient content filtering
             const hasConversationalContent = text.length > 30 && 
-              !text.includes('What\'s on your mind') &&
-              !text.includes('window._oai_') &&
-              !text.match(/^(ChatGPT|User|Assistant)$/);
+              !text.match(/^(ChatGPT|User|Assistant)$/) &&
+              !text.includes('window.__');
             
             return !isNested && hasConversationalContent;
           });
@@ -209,30 +228,75 @@ export class UniversalChatbotNavigator {
     if (foundElements.length === 0) {
       console.log('[DialogueVault] No elements found with specific selectors, trying general approach...');
       
-      // Look for any elements that might be messages
-      const container = document.querySelector('main') || 
-                       document.querySelector('[role="main"]') || 
-                       document.querySelector('.chat') ||
-                       document.querySelector('[class*="chat"]') ||
-                       document.querySelector('[class*="conversation"]') ||
-                       document.body;
-      
-      if (container) {
-        const allDivs = container.querySelectorAll('div');
-        console.log(`[DialogueVault] Found ${allDivs.length} divs in container`);
+      // For ChatGPT, try a comprehensive fallback approach
+      if (this.platform === 'chatgpt') {
+        console.log('[DialogueVault] Trying ChatGPT fallback detection...');
         
-        // Filter divs that look like messages
-        foundElements = Array.from(allDivs).filter(div => {
-          const text = div.textContent?.trim() || '';
-          const hasEnoughText = text.length > 50;
-          const hasChildren = div.children.length > 0;
-          const notTooDeep = div.querySelectorAll('div').length < 50; // Avoid container divs
-          const hasRelevantClasses = div.className.toLowerCase().match(/message|chat|conversation|turn|response|prompt/);
+        // Look for main conversation area
+        const main = document.querySelector('main') || document.querySelector('[role="main"]');
+        if (main) {
+          // Find divs that look like conversation turns
+          const potentialMessages = main.querySelectorAll('div');
+          const messageElements = Array.from(potentialMessages).filter(div => {
+            const text = div.textContent?.trim() || '';
+            const hasEnoughText = text.length > 50;
+            
+            // Look for patterns that indicate this is a message
+            const hasUserContent = text.length > 100; // User messages tend to be longer
+            const hasGroupClass = div.classList.contains('group');
+            const hasFlexClass = div.className.includes('flex');
+            const hasTextPrimary = div.className.includes('text-token-text-primary');
+            const hasGap = div.className.includes('gap-');
+            
+            // Check if it's likely a message container
+            const looksLikeMessage = hasGroupClass || (hasFlexClass && hasGap) || hasTextPrimary;
+            
+            // Avoid nested divs and containers
+            const isNestedTooDeep = div.querySelectorAll('div').length > 20;
+            const isContainer = div.children.length > 10;
+            
+            // Check for actual conversational content
+            const hasConversationalContent = hasEnoughText && 
+              !text.includes('window.') &&
+              !text.match(/^(ChatGPT|User|Assistant|Loading|Thinking)[\s\n]*$/i) &&
+              !text.includes('temporary chat') &&
+              !text.includes('What\'s on your mind');
+            
+            return hasConversationalContent && looksLikeMessage && !isNestedTooDeep && !isContainer;
+          });
           
-          return hasEnoughText && hasChildren && notTooDeep && (hasRelevantClasses || text.length > 100);
-        });
+          console.log(`[DialogueVault] ChatGPT fallback found ${messageElements.length} potential messages`);
+          
+          if (messageElements.length > 0) {
+            foundElements = messageElements;
+          }
+        }
+      } else {
+        // General fallback for other platforms
+        const container = document.querySelector('main') || 
+                         document.querySelector('[role="main"]') || 
+                         document.querySelector('.chat') ||
+                         document.querySelector('[class*="chat"]') ||
+                         document.querySelector('[class*="conversation"]') ||
+                         document.body;
         
-        console.log(`[DialogueVault] Filtered to ${foundElements.length} potential message elements`);
+        if (container) {
+          const allDivs = container.querySelectorAll('div');
+          console.log(`[DialogueVault] Found ${allDivs.length} divs in container`);
+          
+          // Filter divs that look like messages
+          foundElements = Array.from(allDivs).filter(div => {
+            const text = div.textContent?.trim() || '';
+            const hasEnoughText = text.length > 50;
+            const hasChildren = div.children.length > 0;
+            const notTooDeep = div.querySelectorAll('div').length < 50; // Avoid container divs
+            const hasRelevantClasses = div.className.toLowerCase().match(/message|chat|conversation|turn|response|prompt/);
+            
+            return hasEnoughText && hasChildren && notTooDeep && (hasRelevantClasses || text.length > 100);
+          });
+          
+          console.log(`[DialogueVault] Filtered to ${foundElements.length} potential message elements`);
+        }
       }
     }
 
@@ -308,7 +372,63 @@ export class UniversalChatbotNavigator {
   private determineRole(element: HTMLElement): 'user' | 'assistant' | null {
     console.log(`[DialogueVault] Determining role for element with class: ${element.className}`);
     
-    // Method 1: Check platform-specific user indicators
+    // Enhanced ChatGPT role detection
+    if (this.platform === 'chatgpt') {
+      // Method 1: Direct role attribute check
+      const role = element.getAttribute('data-message-author-role');
+      if (role === 'user') {
+        console.log('[DialogueVault] Found user role via data-message-author-role');
+        return 'user';
+      }
+      if (role === 'assistant') {
+        console.log('[DialogueVault] Found assistant role via data-message-author-role');
+        return 'assistant';
+      }
+      
+      // Method 2: Check parent elements for role (more levels for ChatGPT)
+      let current: HTMLElement | null = element;
+      for (let i = 0; i < 5; i++) {
+        if (!current) break;
+        const parentRole = current.getAttribute('data-message-author-role');
+        if (parentRole === 'user') {
+          console.log(`[DialogueVault] Found user role via parent element (level ${i})`);
+          return 'user';
+        }
+        if (parentRole === 'assistant') {
+          console.log(`[DialogueVault] Found assistant role via parent element (level ${i})`);
+          return 'assistant';
+        }
+        current = current.parentElement;
+      }
+      
+      // Method 3: Look for ChatGPT-specific UI patterns
+      const text = element.textContent?.trim() || '';
+      
+      // Check for typical assistant message characteristics in ChatGPT
+      const hasAssistantIndicators = element.querySelector('svg') ||
+                                    element.querySelector('code') ||
+                                    element.querySelector('pre') ||
+                                    element.querySelector('[class*="markdown"]') ||
+                                    text.includes('```') ||
+                                    text.length > 200; // Assistant responses tend to be longer
+      
+      // Check for typical user message characteristics
+      const hasUserIndicators = element.querySelector('img[alt*="user" i]') ||
+                               element.className.includes('max-w-2xl') ||
+                               text.endsWith('?'); // User messages often end with questions
+      
+      if (hasUserIndicators && !hasAssistantIndicators) {
+        console.log('[DialogueVault] Found user indicators in ChatGPT');
+        return 'user';
+      }
+      
+      if (hasAssistantIndicators && !hasUserIndicators) {
+        console.log('[DialogueVault] Found assistant indicators in ChatGPT');
+        return 'assistant';
+      }
+    }
+    
+    // Method 4: Platform-agnostic role detection
     for (const selector of this.platformConfig.userIndicators) {
       if (element.matches(selector) || element.querySelector(selector)) {
         console.log(`[DialogueVault] Found user role via selector: ${selector}`);
