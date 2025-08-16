@@ -58,4 +58,10 @@ module.exports = {
       chunks: 'all',
     },
   },
+  // Increase performance budgets to accommodate extension icons and other static assets
+  performance: {
+    // Set limits to 512 KiB which is reasonable for small extensions while avoiding noisy warnings
+    maxAssetSize: 512 * 1024,
+    maxEntrypointSize: 512 * 1024,
+  },
 };
