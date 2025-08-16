@@ -146,7 +146,8 @@ export class UniversalChatbotNavigator {
             if (!hasRole) return false;
             
             // Skip if it's just placeholder/system/debug text
-            const isPlaceholderText = text.match(/^(What's on your mind today\?|ChatGPT|User|Assistant|Temporary Chat|This chat won't appear|Ask anything)$/i);
+            // Match a variety of short UI/system strings or greetings that are not real conversation turns.
+            const isPlaceholderText = text.match(/(what's on your mind today\?|how can i help|chatgpt\b|user\b|assistant\b|temporary chat|this chat won't appear|this chat will not appear|ask anything)/i);
             const isDebugText = text.includes('window.__oai_') || 
                               text.includes('window._oai_') ||
                               text.includes('__oai_logHTML') ||
@@ -261,7 +262,8 @@ export class UniversalChatbotNavigator {
           
           // Skip common placeholder texts for ChatGPT
           if (this.platform === 'chatgpt') {
-            const isPlaceholder = preview.match(/^(What's on your mind|ChatGPT|User|Assistant|Temporary|This chat won't|window\.|__oai_|Ask anything)/i);
+            // Skip common short greetings, UI/system notices, or debugging traces that are not user/assistant content.
+            const isPlaceholder = preview.match(/(what's on your mind|how can i help|chatgpt\b|user\b|assistant\b|temporary chat|this chat won't appear|this chat will not appear|window\.|__oai_|ask anything)/i);
             const isDebugContent = preview.includes('window.__') || 
                                  preview.includes('window._') ||
                                  preview.includes('logHTML') ||
