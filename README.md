@@ -1,4 +1,4 @@
-# DialogueVault - Prompt Navigator 
+# DialogueVault - Prompt Navigator  
 
 A React + TypeScript Chrome extension for navigating conversations in **ChatGPT, Claude, and Gemini**.
 
